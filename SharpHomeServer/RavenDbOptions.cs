@@ -17,7 +17,10 @@ namespace SharpHomeServer
         public string[] Urls { get; set; }
 
         public string CertificatePath { get; set; }
+<<<<<<< HEAD
 
         public string Password { get; set; }
+=======
+>>>>>>> da0686ff14f3d9073ed1bf1e7eacbc242f1abb0b
     }
 }

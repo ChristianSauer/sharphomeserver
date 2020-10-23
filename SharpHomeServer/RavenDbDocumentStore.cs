@@ -36,7 +36,11 @@ namespace SharpHomeServer
                 Database = ravenDbOptions.Database,
 
                 // Define a client certificate (optional)
+<<<<<<< HEAD
                 Certificate = new X509Certificate2(ravenDbOptions.CertificatePath, ravenDbOptions.Password),
+=======
+                Certificate = new X509Certificate2(ravenDbOptions.CertificatePath, "phi1plun-FEA5lont"),
+>>>>>>> da0686ff14f3d9073ed1bf1e7eacbc242f1abb0b
 
                 // Initialize the Document Store
             }.Initialize();
