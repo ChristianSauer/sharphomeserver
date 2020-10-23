@@ -31,10 +31,6 @@ namespace SharpHomeServer
                                                 RavenDbOptions.RavenDb));
             services.AddRazorPages();
             services.AddServerSideBlazor();
-<<<<<<< HEAD
-=======
-            services.AddSingleton<WeatherForecastService>();
->>>>>>> da0686ff14f3d9073ed1bf1e7eacbc242f1abb0b
             services.AddSingleton<IRavenDbDocumentStore, RavenDbDocumentStore>();
             services.AddSingleton<IReadingProvider, ReadingProvider>();
         }
