@@ -1,0 +1,100 @@
+﻿@page "/readings/{type}"
+@using Plotly.Blazor.Traces.ScatterLib
+@inject SharpHomeServer.Data.IReadingProvider provider;
+
+
+<h1>@type usage</h1>
+
+<PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
+
+<h1>@type cost in euro</h1>
+
+<PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="dataCost" @ref="chartCost" />
+
+@code {
+
+    [Parameter]
+    public string type { get; set; }
+
+
+
+    PlotlyChart chart;
+    PlotlyChart chartCost;
+    Config config = new Config();
+    Layout layout = new Layout();
+    // Using of the interface IList is important for the event callback!
+    IList<ITrace> data = new List<ITrace>
+        {
+        new Scatter
+        {
+            Name = "ScatterTrace",
+            Mode = ModeFlag.Lines | ModeFlag.Markers,
+
+            X = new List<object>{},
+            Y = new List<object>{},
+        }
+    };
+
+    IList<ITrace> dataCost = new List<ITrace>
+{
+        new Scatter
+        {
+            Name = "ScatterTrace",
+            Mode = ModeFlag.Lines | ModeFlag.Markers,
+
+            X = new List<object>{},
+            Y = new List<object>{},
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ExtendData();
+            await ExtendDataCost();
+        }
+
+    }
+
+    private async Task ExtendData()
+    {
+        if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
+
+        var max = (int?)scatter.X?.Max();
+        var (x, y) = provider.GetReadingTimeSeries(type);
+
+
+        if (!scatter.X.Any() || !scatter.Y.Any())
+        {
+            scatter.X.AddRange(x.Cast<object>().ToList());
+            scatter.Y.AddRange(y.Cast<object>().ToList());
+            await chart.React();
+        }
+        else
+        {
+            await chart.ExtendTrace(x, y, data.IndexOf(scatter));
+        }
+    }
+
+
+    private async Task ExtendDataCost()
+    {
+        if (!(chartCost.Data.FirstOrDefault() is Scatter scatter)) return;
+
+        var max = (int?)scatter.X?.Max();
+        var (x, y) = provider.GetGasCost(type);
+
+
+        if (!scatter.X.Any() || !scatter.Y.Any())
+        {
+            scatter.X.AddRange(x.Cast<object>().ToList());
+            scatter.Y.AddRange(y.Cast<object>().ToList());
+            await chartCost.React();
+        }
+        else
+        {
+            await chartCost.ExtendTrace(x, y, data.IndexOf(scatter));
+        }
+    }
+}
