@@ -11,5 +11,7 @@ namespace SharpHomeServer.Data
         (List<DateTime>, List<double>) GetReadingTimeSeries(string type);
 
         (List<DateTime>, List<double>) GetGasCost(string type);
+
+        (DateTime, DateTime) GetStartEndOfTimeSeries(string type);
     }
 }

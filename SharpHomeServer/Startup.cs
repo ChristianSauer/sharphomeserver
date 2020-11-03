@@ -33,6 +33,8 @@ namespace SharpHomeServer
             services.AddServerSideBlazor();
             services.AddSingleton<IRavenDbDocumentStore, RavenDbDocumentStore>();
             services.AddSingleton<IReadingProvider, ReadingProvider>();
+            services.AddSingleton<IChartDataProvider, ChartDataProvider>();
+            services.AddHostedService<IndexDeployer>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

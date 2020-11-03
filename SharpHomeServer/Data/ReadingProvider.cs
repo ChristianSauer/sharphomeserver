@@ -64,5 +64,17 @@ namespace SharpHomeServer.Data
             return (x, euros.ToList());
         }
 
+
+        public (DateTime, DateTime) GetStartEndOfTimeSeries(string type) {
+            using var session = store.Store.OpenSession();
+            var query = session.Query<Reading>(collectionName: "Datas").Where(x => x.readingType == type).Select(q => RavenQuery.TimeSeries(q, "'gas m3 usage'").Select(x => new { Min = x.Min()}).ToList()); // todo parametrize
+
+            var result = query.ToList();
+
+            var start = result.First().Results.First().From;
+            var end =  result.Last().Results.Last().To;
+
+            return (start, end);
+        }
     }
 }
