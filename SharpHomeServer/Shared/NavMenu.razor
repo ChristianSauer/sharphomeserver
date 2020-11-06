@@ -1,4 +1,5 @@
 ﻿@inject SharpHomeServer.Data.IReadingProvider provider;
+@inject SharpHomeServer.Data.IChartDataProvider chartProvider;
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">SharpHomeServer</a>
@@ -15,15 +16,16 @@
             </NavLink>
         </li>
 
-        @foreach (var reading in readings)
+        @foreach (var chart in charts)
         {
+            
             <li class="nav-item px-3">
-                <NavLink class="nav-link" href=@{$"readings/{reading}"}>
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> @reading
+                <NavLink class="nav-link" href=@{$"readings/{Uri.EscapeDataString(chart.DocumentId)}/{chart.TimeSeries}"}>
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> @chart.Name
                 </NavLink>
             </li>
-        }
-
+                    
+                    }
 
     </ul>
 </div>
@@ -40,8 +42,11 @@
 
     List<string> readings = new List<string>();
 
+    List<ChartOption> charts = new List<ChartOption>();
+
     protected override async Task OnInitializedAsync()
     {
         readings = await provider.GetReadingTypesAsync();
+        charts = chartProvider.Charts.Charts;
     }
 }

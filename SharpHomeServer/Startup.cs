@@ -29,6 +29,10 @@ namespace SharpHomeServer
 
             services.Configure<RavenDbOptions>(Configuration.GetSection(
                                                 RavenDbOptions.RavenDb));
+
+
+            services.Configure<ChartOptions>(Configuration.GetSection("Layout"));
+
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<IRavenDbDocumentStore, RavenDbDocumentStore>();

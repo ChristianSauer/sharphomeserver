@@ -1,74 +1,72 @@
-﻿@page "/readings/{type}"
+﻿@page "/readings/{Document}/{Timeseries}"
 @using Plotly.Blazor.Traces.ScatterLib
-@inject SharpHomeServer.Data.IReadingProvider provider;
+@inject SharpHomeServer.Data.IChartDataProvider provider;
 
-<p>
-    @start
-</p>
+@if (chartData == null)
+{
+    <h1>Loading...</h1>
+    <p></p>
+}
+else
+{
+    <h1>@chartData.Name</h1>
+    <p>@chartData.Explanation</p>
+}
 
-<p>
-    @end
-</p>
 
-<h1>@type usage</h1>
+
 
 <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
 
-<h1>@type cost in euro</h1>
-
-<PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="dataCost" @ref="chartCost" />
 
 @code {
 
     [Parameter]
-    public string type { get; set; }
+    public string Document { get; set; }
 
-    DateTime start;
-    DateTime end;
+    [Parameter]
+    public string Timeseries { get; set; }
+
+    ChartOption chartData;
 
 
 
     PlotlyChart chart;
-    PlotlyChart chartCost;
     Config config = new Config();
     Layout layout = new Layout();
     // Using of the interface IList is important for the event callback!
-    IList<ITrace> data = new List<ITrace>
-        {
-        new Scatter
-        {
-            Name = "ScatterTrace",
-            Mode = ModeFlag.Lines | ModeFlag.Markers,
-
-            X = new List<object>{},
-            Y = new List<object>{},
-        }
-    };
-
-    IList<ITrace> dataCost = new List<ITrace>
+    IList<ITrace> data = new List<ITrace>()
 {
-        new Scatter
+       GetScatter()
+    };
+
+    private static Scatter GetScatter()
+    {
+        return new Scatter
         {
             Name = "ScatterTrace",
             Mode = ModeFlag.Lines | ModeFlag.Markers,
 
-            X = new List<object>{},
-            Y = new List<object>{},
-        }
-    };
+            X = new List<object> { },
+            Y = new List<object> { },
+        };
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+
+
+        if (firstRender || data.Count() == 0)
         {
+
+            chartData = provider.GetChartOptionFor(Document, Timeseries);
             await ExtendData();
-            await ExtendDataCost();
-            var (start1, end1) = provider.GetStartEndOfTimeSeries(type);
+            //await ExtendDataCost();
+            //var (start1, end1) = provider.GetStartEndOfTimeSeries(type);
 
-            start = start1;
-            end = end1;
+            //start = start1;
+            //end = end1;
         }
-
     }
 
     private async Task ExtendData()
@@ -76,7 +74,7 @@
         if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
 
         var max = (int?)scatter.X?.Max();
-        var (x, y) = provider.GetReadingTimeSeries(type);
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries);
 
 
         if (!scatter.X.Any() || !scatter.Y.Any())
@@ -91,24 +89,19 @@
         }
     }
 
-
-    private async Task ExtendDataCost()
+    protected override async Task OnParametersSetAsync()
     {
-        if (!(chartCost.Data.FirstOrDefault() is Scatter scatter)) return;
-
-        var max = (int?)scatter.X?.Max();
-        var (x, y) = provider.GetGasCost(type);
-
-
-        if (!scatter.X.Any() || !scatter.Y.Any())
+        if (chart == null)
         {
-            scatter.X.AddRange(x.Cast<object>().ToList());
-            scatter.Y.AddRange(y.Cast<object>().ToList());
-            await chartCost.React();
+            return;
         }
-        else
-        {
-            await chartCost.ExtendTrace(x, y, data.IndexOf(scatter));
-        }
+
+        await chart.Clear();
+        data.Clear();
+        data.Add(GetScatter());
+        chartData = provider.GetChartOptionFor(Document, Timeseries);
+        await ExtendData();
+
     }
+
 }

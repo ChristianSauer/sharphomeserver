@@ -6,8 +6,13 @@ namespace SharpHomeServer
     {
         public string DocumentId { get; set; }
 
-        public List<Chart> Charts { get; set; }
+        public string Name { get; set; }
 
+        public string TimeSeries { get; set; }
+
+        public string Explanation { get; set; }
+
+        public string AggregationMode { get; set; }
 
     }
 }
