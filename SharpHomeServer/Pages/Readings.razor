@@ -2,6 +2,7 @@
 @using Plotly.Blazor.Traces.ScatterLib
 @inject SharpHomeServer.Data.IChartDataProvider provider;
 @using SharpHomeServer.Data
+@using Plotly.Blazor.LayoutLib
 
 @if (chartData == null)
 {
@@ -31,7 +32,9 @@ else
 
     PlotlyChart chart;
     Config config = new Config();
-    Layout layout = new Layout();
+    Layout layout = new Layout() {
+        XAxis = new List<XAxis> { new XAxis() {TickFormat = "%d/%m" } }
+    };
     // Using of the interface IList is important for the event callback!
     IList<ITrace> data = new List<ITrace>()
     {
@@ -100,6 +103,21 @@ else
 
     }
 
+    private string GetTickFormat(string timeSeries)
+    {
+        var rv = timeSeries switch
+        {
+            "Minutes" => "%H:%M",
+            "Hours" => "%e.%m %H",
+            "Days" => "%e.%m",
+            "Months" => "%m.%Y",
+            "Quarters" => "%m.%Y",
+            "Years" => "%Y",
+            _ => "%x"
+        };
+        return rv;
+    }
+
     async Task HandleGroupByChange(string newGroupBy)
     {
         await chart.Clear();
@@ -107,5 +125,9 @@ else
         data.Add(GetScatter());
         chartData = provider.GetChartOptionFor(Document, Timeseries);
         await ExtendData(newGroupBy);
+
+        layout.XAxis.First().TickFormat = GetTickFormat(newGroupBy);
+
+        await chart.React();
     }
 }
