@@ -25,9 +25,14 @@ namespace SharpHomeServer.Data
             this.store = store;
         }
 
-        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries)
+        private string test = "1 year";
+
+        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy)
 
         {
+
+            
+
             var splitted = document.Split("/");
             // todo error if  =!2
 
@@ -38,11 +43,15 @@ namespace SharpHomeServer.Data
 
             using var session = store.Store.OpenSession();
 
+            string groupByUnit = $"1 {groupBy}";
+
+            ValidGroupByTimes validGroupBy =  Enum.Parse<ValidGroupByTimes>(groupBy);
+
             var query = session.Query<Reading>(collectionName: collection)
                 .Where(x => x.readingType == docId)
                 .Select(q => RavenQuery
                     .TimeSeries(q, escaped)
-                    .GroupBy(g => g.Days(1))
+                    .GroupBy(groupByUnit)
                     .Select(g => new
                     {
                         Min = g.Min(),
@@ -50,7 +59,7 @@ namespace SharpHomeServer.Data
                         Average = g.Average()
                     })
                     .ToList());
-
+            var x = query.Expression;
             var result = query.ToList();
 
             var options = GetChartOptionFor(document, timeSeries);

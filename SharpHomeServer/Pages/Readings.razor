@@ -1,6 +1,7 @@
 ﻿@page "/readings/{Document}/{Timeseries}"
 @using Plotly.Blazor.Traces.ScatterLib
 @inject SharpHomeServer.Data.IChartDataProvider provider;
+@using SharpHomeServer.Data
 
 @if (chartData == null)
 {
@@ -13,11 +14,9 @@ else
     <p>@chartData.Explanation</p>
 }
 
-
-
-
 <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
 
+<TimeGoupBySelector OnClick="HandleGroupByChange"></TimeGoupBySelector>
 
 @code {
 
@@ -30,13 +29,12 @@ else
     ChartOption chartData;
 
 
-
     PlotlyChart chart;
     Config config = new Config();
     Layout layout = new Layout();
     // Using of the interface IList is important for the event callback!
     IList<ITrace> data = new List<ITrace>()
-{
+    {
        GetScatter()
     };
 
@@ -54,13 +52,11 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-
-
         if (firstRender || data.Count() == 0)
         {
 
             chartData = provider.GetChartOptionFor(Document, Timeseries);
-            await ExtendData();
+            await ExtendData(ValidGroupByTimes.Days.ToString("g"));
             //await ExtendDataCost();
             //var (start1, end1) = provider.GetStartEndOfTimeSeries(type);
 
@@ -69,12 +65,12 @@ else
         }
     }
 
-    private async Task ExtendData()
+    private async Task ExtendData(string groupBy)
     {
         if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
 
         var max = (int?)scatter.X?.Max();
-        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries);
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy);
 
 
         if (!scatter.X.Any() || !scatter.Y.Any())
@@ -100,8 +96,16 @@ else
         data.Clear();
         data.Add(GetScatter());
         chartData = provider.GetChartOptionFor(Document, Timeseries);
-        await ExtendData();
+        await ExtendData(ValidGroupByTimes.Days.ToString("g"));
 
     }
 
+    async Task HandleGroupByChange(string newGroupBy)
+    {
+        await chart.Clear();
+        data.Clear();
+        data.Add(GetScatter());
+        chartData = provider.GetChartOptionFor(Document, Timeseries);
+        await ExtendData(newGroupBy);
+    }
 }

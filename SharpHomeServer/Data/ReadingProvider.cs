@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Plotly.Blazor.Traces.IsoSurfaceLib.CapsLib;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Queries;
+using Raven.Client.Documents.Queries.TimeSeries;
 
 namespace SharpHomeServer.Data
 {

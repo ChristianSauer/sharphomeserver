@@ -1,0 +1,32 @@
+﻿@using SharpHomeServer.Data;
+
+<div class="TimeGroupSelector">
+    <h3 class="card-title">Select a Time Unit to display</h3>
+
+    <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+
+        @foreach (var item in TimeSelector.ValidGroupByTimes)
+        {
+            var i = item;
+            var isSelected = Current == i;
+
+            <button class="btn btn-outline-primary btn-lg btn-space" @onclick="() => { Current = i; OnClick.InvokeAsync(i); }" aria-pressed="@isSelected">@i</button>// i used here since blazor currently needs that
+            // todo set selected
+        }
+
+    </div>
+</div>
+
+
+<p class="card-text">@ChildContent</p>
+
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter] public EventCallback<string> OnClick { get; set; }
+
+    public string Current { get; set; } = ValidGroupByTimes.Days.ToString("g");
+
+}
