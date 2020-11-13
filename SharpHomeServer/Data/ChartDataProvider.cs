@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Raven.Client.Documents.Operations.TimeSeries;
 using Raven.Client.Documents.Queries;
 using Raven.Client.Documents.Queries.TimeSeries;
 using System;
@@ -25,14 +26,24 @@ namespace SharpHomeServer.Data
             this.store = store;
         }
 
-        private string test = "1 year";
+        public async Task<(DateTime, DateTime)> GetTimeSeriesDatetimeRange(string document, string timeSeries)
+         {
 
-        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy)
+            var stats = await store.Store.Operations.SendAsync(new GetTimeSeriesStatisticsOperation(document));
+
+            var ts = stats.TimeSeries.Where(x => x.Name == timeSeries).FirstOrDefault();
+
+            if (ts == null)
+            {
+                throw new ArgumentOutOfRangeException($"the timeseries {timeSeries} does not exist in the document {document}");
+            }
+
+            return (ts.StartDate, ts.EndDate);
+        }
+
+        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end)
 
         {
-
-            
-
             var splitted = document.Split("/");
             // todo error if  =!2
 
@@ -50,7 +61,7 @@ namespace SharpHomeServer.Data
             var query = session.Query<Reading>(collectionName: collection)
                 .Where(x => x.readingType == docId)
                 .Select(q => RavenQuery
-                    .TimeSeries(q, escaped)
+                    .TimeSeries(q, escaped, start, end)
                     .GroupBy(groupByUnit)
                     .Select(g => new
                     {

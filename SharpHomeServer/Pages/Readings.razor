@@ -19,6 +19,8 @@ else
 
 <TimeGoupBySelector OnClick="HandleGroupByChange"></TimeGoupBySelector>
 
+<TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange"></TimeRangePicker>
+
 @code {
 
     [Parameter]
@@ -29,6 +31,11 @@ else
 
     ChartOption chartData;
 
+    DateTime start;
+
+    DateTime end;
+
+    string groupBy = ValidGroupByTimes.Days.ToString("g");
 
     PlotlyChart chart;
     Config config = new Config();
@@ -53,18 +60,25 @@ else
         };
     }
 
+    async Task SetStartEnd()
+    {
+        if (start == DateTime.MinValue && end == DateTime.MinValue)
+        {
+            var (start1, end1) = await provider.GetTimeSeriesDatetimeRange(Document, Timeseries);
+            start = start1;
+            end = end1;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender || data.Count() == 0)
         {
-
+            await SetStartEnd();
             chartData = provider.GetChartOptionFor(Document, Timeseries);
-            await ExtendData(ValidGroupByTimes.Days.ToString("g"));
-            //await ExtendDataCost();
-            //var (start1, end1) = provider.GetStartEndOfTimeSeries(type);
+            await ExtendData(groupBy);
 
-            //start = start1;
-            //end = end1;
+            StateHasChanged();
         }
     }
 
@@ -73,7 +87,7 @@ else
         if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
 
         var max = (int?)scatter.X?.Max();
-        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy);
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end);
 
 
         if (!scatter.X.Any() || !scatter.Y.Any())
@@ -95,11 +109,20 @@ else
             return;
         }
 
+
+        start = DateTime.MinValue;
+        end = DateTime.MinValue;
+        groupBy = ValidGroupByTimes.Days.ToString("g");
+
         await chart.Clear();
         data.Clear();
         data.Add(GetScatter());
         chartData = provider.GetChartOptionFor(Document, Timeseries);
-        await ExtendData(ValidGroupByTimes.Days.ToString("g"));
+        await ExtendData(groupBy);
+
+        await SetStartEnd();
+
+        StateHasChanged();
 
     }
 
@@ -120,13 +143,31 @@ else
 
     async Task HandleGroupByChange(string newGroupBy)
     {
+        groupBy = newGroupBy;
+        await ClearAndUpdateChart();
+    }
+
+    async Task HandleStartChange(DateTime start)
+    {
+        this.start = start;
+        await ClearAndUpdateChart();
+    }
+
+    async Task HandleEndChange(DateTime end)
+    {
+        this.end = end;
+        await ClearAndUpdateChart();
+    }
+
+    private async Task ClearAndUpdateChart()
+    {
         await chart.Clear();
         data.Clear();
         data.Add(GetScatter());
         chartData = provider.GetChartOptionFor(Document, Timeseries);
-        await ExtendData(newGroupBy);
+        await ExtendData(groupBy);
 
-        layout.XAxis.First().TickFormat = GetTickFormat(newGroupBy);
+        layout.XAxis.First().TickFormat = GetTickFormat(groupBy);
 
         await chart.React();
     }

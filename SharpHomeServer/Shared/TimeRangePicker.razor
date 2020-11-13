@@ -1,0 +1,19 @@
+﻿<div class="time-picker">
+    <h3 style="margin-top: 40px">Start</h3>
+    <RadzenDatePicker TValue="DateTime" ShowTime="true" ShowSeconds="true" HoursStep="1" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm" @bind-Value="Start" Change="(args) =>  StartChanged.InvokeAsync(args.Value)"/>
+
+    <h3 style="margin-top: 40px">End</h3>
+    <RadzenDatePicker TValue="DateTime" ShowTime="true" ShowSeconds="true" HoursStep="1" MinutesStep="5" SecondsStep="10" DateFormat="dd/MM/yyyy HH:mm" @bind-Value="End"  Change="(args) => EndChanged.InvokeAsync(args.Value)"/>
+</div>
+
+@code {
+    [Parameter]
+    public  DateTime Start { get; set; }
+
+    [Parameter]
+    public DateTime End { get; set; }
+
+    [Parameter] public EventCallback<DateTime> StartChanged { get; set; }
+
+    [Parameter] public EventCallback<DateTime> EndChanged { get; set; }
+}
