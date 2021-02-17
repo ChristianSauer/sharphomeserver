@@ -1,4 +1,4 @@
-﻿@page "/readings/{Document}/{Timeseries}"
+﻿@page "/data/{Document}/{Timeseries}"
 @using Plotly.Blazor.Traces.ScatterLib
 @inject SharpHomeServer.Data.IChartDataProvider provider;
 @using SharpHomeServer.Data
@@ -22,25 +22,25 @@ else
 <TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange"></TimeRangePicker>
 
 @code {
-
     [Parameter]
     public string Document { get; set; }
 
     [Parameter]
     public string Timeseries { get; set; }
 
-    ChartOption chartData;
+    bool paramsChanged = false;
 
     DateTime start;
-
     DateTime end;
 
     string groupBy = ValidGroupByTimes.Days.ToString("g");
 
     PlotlyChart chart;
+    ChartOption chartData;
     Config config = new Config();
-    Layout layout = new Layout() {
-        XAxis = new List<XAxis> { new XAxis() {TickFormat = "%d/%m" } }
+    Layout layout = new Layout()
+    {
+        XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } }
     };
     // Using of the interface IList is important for the event callback!
     IList<ITrace> data = new List<ITrace>()
@@ -60,6 +60,44 @@ else
         };
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        paramsChanged = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender || paramsChanged)
+        {
+            await SetStartEnd();
+            await ExtendData(groupBy);
+            paramsChanged = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExtendData(string groupBy)
+    {
+        if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
+
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end);
+
+        if (!scatter.X.Any() || !scatter.Y.Any())
+        {
+            scatter.X.AddRange(x.Cast<object>().ToList());
+            scatter.Y.AddRange(y.Cast<object>().ToList());
+
+            layout.XAxis.First().TickFormat = GetTickFormat(groupBy);
+            await chart.React();
+        }
+        else
+        {
+            await chart.ExtendTrace(x, y, data.IndexOf(scatter));
+        }
+
+    }
+
     async Task SetStartEnd()
     {
         if (start == DateTime.MinValue && end == DateTime.MinValue)
@@ -70,80 +108,10 @@ else
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender || data.Count() == 0)
-        {
-            await SetStartEnd();
-            chartData = provider.GetChartOptionFor(Document, Timeseries);
-            await ExtendData(groupBy);
-
-            StateHasChanged();
-        }
-    }
-
-    private async Task ExtendData(string groupBy)
-    {
-        if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
-
-        var max = (int?)scatter.X?.Max();
-        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end);
-
-
-        if (!scatter.X.Any() || !scatter.Y.Any())
-        {
-            scatter.X.AddRange(x.Cast<object>().ToList());
-            scatter.Y.AddRange(y.Cast<object>().ToList());
-            await chart.React();
-        }
-        else
-        {
-            await chart.ExtendTrace(x, y, data.IndexOf(scatter));
-        }
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (chart == null)
-        {
-            return;
-        }
-
-
-        start = DateTime.MinValue;
-        end = DateTime.MinValue;
-        groupBy = ValidGroupByTimes.Days.ToString("g");
-
-        await chart.Clear();
-        data.Clear();
-        data.Add(GetScatter());
-        chartData = provider.GetChartOptionFor(Document, Timeseries);
-        await ExtendData(groupBy);
-
-        await SetStartEnd();
-
-        StateHasChanged();
-
-    }
-
-    private string GetTickFormat(string timeSeries)
-    {
-        var rv = timeSeries switch
-        {
-            "Minutes" => "%H:%M",
-            "Hours" => "%e.%m %H",
-            "Days" => "%e.%m",
-            "Months" => "%m.%Y",
-            "Quarters" => "%m.%Y",
-            "Years" => "%Y",
-            _ => "%x"
-        };
-        return rv;
-    }
-
     async Task HandleGroupByChange(string newGroupBy)
     {
         groupBy = newGroupBy;
+        paramsChanged = true;
         await ClearAndUpdateChart();
     }
 
@@ -165,10 +133,22 @@ else
         data.Clear();
         data.Add(GetScatter());
         chartData = provider.GetChartOptionFor(Document, Timeseries);
-        await ExtendData(groupBy);
-
-        layout.XAxis.First().TickFormat = GetTickFormat(groupBy);
-
         await chart.React();
     }
+
+    private string GetTickFormat(string timeSeries)
+    {
+        var rv = timeSeries switch
+        {
+            "Minutes" => "%H:%M",
+            "Hours" => "%e.%m %H",
+            "Days" => "%e.%m",
+            "Months" => "%m.%Y",
+            "Quarters" => "%m.%Y",
+            "Years" => "%Y",
+            _ => "%x"
+        };
+        return rv;
+    }
+
 }

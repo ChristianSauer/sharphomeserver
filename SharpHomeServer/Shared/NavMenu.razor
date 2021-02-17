@@ -20,12 +20,12 @@
         {
             
             <li class="nav-item px-3">
-                <NavLink class="nav-link" href=@{$"readings/{Uri.EscapeDataString(chart.DocumentId)}/{chart.TimeSeries}"}>
+                <NavLink class="nav-link" href=@{$"data/{Uri.EscapeDataString(chart.DocumentId)}/{chart.TimeSeries}"}>
                     <span class="oi oi-list-rich" aria-hidden="true"></span> @chart.Name
                 </NavLink>
             </li>
                     
-                    }
+        }
 
     </ul>
 </div>
