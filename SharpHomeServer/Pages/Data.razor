@@ -1,8 +1,9 @@
 ﻿@page "/data/{Document}/{Timeseries}"
 @using Plotly.Blazor.Traces.ScatterLib
-@inject SharpHomeServer.Data.IChartDataProvider provider;
 @using SharpHomeServer.Data
 @using Plotly.Blazor.LayoutLib
+@inject SharpHomeServer.Data.IChartDataProvider provider;
+@inject TimeZoneService TimeZoneService
 
 @if (chartData == null)
 {
@@ -15,11 +16,13 @@ else
     <p>@chartData.Explanation</p>
 }
 
+<h1>Current time</h1>
+
 <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
 
 <TimeGoupBySelector OnClick="HandleGroupByChange"></TimeGoupBySelector>
 
-<TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange"></TimeRangePicker>
+<TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange" ></TimeRangePicker>
 
 @code {
     [Parameter]
@@ -44,9 +47,11 @@ else
     };
     // Using of the interface IList is important for the event callback!
     IList<ITrace> data = new List<ITrace>()
-    {
+{
        GetScatter()
     };
+
+    DateTimeOffset userTime;
 
     private static Scatter GetScatter()
     {
@@ -67,7 +72,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-
+        userTime = await TimeZoneService.GetLocalDateTime(DateTimeOffset.UtcNow);
         if (firstRender || paramsChanged)
         {
             await SetStartEnd();
@@ -81,7 +86,11 @@ else
     {
         if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
 
-        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end);
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end); // todo correct tz!
+
+        var offset = userTime.Offset;
+
+        x = x.Select(x => x.AddHours(offset.TotalHours)).ToList(); // we get the data in utc, we want them in the users offset
 
         if (!scatter.X.Any() || !scatter.Y.Any())
         {

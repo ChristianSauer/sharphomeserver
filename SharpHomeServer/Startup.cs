@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using SharpHomeServer.Data;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -35,6 +36,9 @@ namespace SharpHomeServer
 
             services.AddRazorPages();
             services.AddServerSideBlazor();
+
+            services.AddScoped<TimeZoneService>();
+
             services.AddSingleton<IRavenDbDocumentStore, RavenDbDocumentStore>();
             services.AddSingleton<IReadingProvider, ReadingProvider>();
             services.AddSingleton<IChartDataProvider, ChartDataProvider>();
