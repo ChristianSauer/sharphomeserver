@@ -118,12 +118,14 @@ else
     async Task HandleStartChange(DateTime start)
     {
         this.start = start;
+        this.paramsChanged = true;
         await ClearAndUpdateChart();
     }
 
     async Task HandleEndChange(DateTime end)
     {
         this.end = end;
+        this.paramsChanged = true;
         await ClearAndUpdateChart();
     }
 
