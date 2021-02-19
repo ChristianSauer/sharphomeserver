@@ -16,8 +16,6 @@ else
     <p>@chartData.Explanation</p>
 }
 
-<h1>Current time</h1>
-
 <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
 
 <TimeGoupBySelector OnClick="HandleGroupByChange"></TimeGoupBySelector>
@@ -67,18 +65,19 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        await ClearAndUpdateChart();
         paramsChanged = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         userTime = await TimeZoneService.GetLocalDateTime(DateTimeOffset.UtcNow);
+
         if (firstRender || paramsChanged)
         {
             await SetStartEnd();
             await ExtendData(groupBy);
             paramsChanged = false;
-            StateHasChanged();
         }
     }
 
@@ -86,11 +85,13 @@ else
     {
         if (!(chart.Data.FirstOrDefault() is Scatter scatter)) return;
 
-        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end); // todo correct tz!
+        var (x, y) = provider.GetReadingTimeSeries(Document, Timeseries, groupBy, start, end);
 
-        var offset = userTime.Offset;
-
-        x = x.Select(x => x.AddHours(offset.TotalHours)).ToList(); // we get the data in utc, we want them in the users offset
+        if (groupBy == "Minutes" || groupBy == "Hours")
+        {
+            var offset = userTime.Offset;
+            x = x.Select(x => x.AddHours(offset.TotalHours)).ToList(); // we get the data in utc, we want them in the users offset if we use a timeunit where it matters.
+        }
 
         if (!scatter.X.Any() || !scatter.Y.Any())
         {
@@ -140,6 +141,11 @@ else
 
     private async Task ClearAndUpdateChart()
     {
+        if (chart == null)
+        {
+            return;
+        }
+
         await chart.Clear();
         data.Clear();
         data.Add(GetScatter());
