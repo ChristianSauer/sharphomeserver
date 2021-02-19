@@ -126,4 +126,5 @@ namespace SharpHomeServer.Data
 // Start > End verhindern
 // Deep linking
 // todo set chart to hidden while loading
-// todo: add unit to data and display
+// todo set better yaxis -> datetime
+// todo use async for ravendb usage?
