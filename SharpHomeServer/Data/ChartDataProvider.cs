@@ -126,5 +126,6 @@ namespace SharpHomeServer.Data
 // Start > End verhindern
 // Deep linking
 // todo set chart to hidden while loading
-// todo set better yaxis -> datetime
 // todo use async for ravendb usage?
+// TODO remove Quarters, useless
+// TODO adjust timerange so that if groupby is years, round to full years. should avoid misalignment in the chart

@@ -23,47 +23,47 @@ else
 <TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange" ></TimeRangePicker>
 
 @code {
-    [Parameter]
-    public string Document { get; set; }
+        [Parameter]
+        public string Document { get; set; }
 
-    [Parameter]
-    public string Timeseries { get; set; }
+        [Parameter]
+        public string Timeseries { get; set; }
 
-    bool paramsChanged = false;
+        bool paramsChanged = false;
 
-    DateTime start;
-    DateTime end;
+        DateTime start;
+        DateTime end;
 
-    string groupBy = ValidGroupByTimes.Days.ToString("g");
+        string groupBy = ValidGroupByTimes.Days.ToString("g");
 
-    PlotlyChart chart;
-    ChartOption chartData;
-    Config config = new Config();
-    Layout layout = new Layout()
-    {
-        XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } },
-        YAxis = new List<YAxis> { new YAxis() }
-    };
-    // Using of the interface IList is important for the event callback!
-    IList<ITrace> data = new List<ITrace>()
+        PlotlyChart chart;
+        ChartOption chartData;
+        Config config = new Config();
+        Layout layout = new Layout()
+        {
+            XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } },
+            YAxis = new List<YAxis> { new YAxis() }
+        };
+        // Using of the interface IList is important for the event callback!
+        IList<ITrace> data = new List<ITrace>()
 {
        GetScatter()
     };
 
-    DateTimeOffset userTime;
+        DateTimeOffset userTime;
 
-    private static Scatter GetScatter()
-    {
-        return new Scatter
+        private static Scatter GetScatter()
         {
-            Name = "ScatterTrace",
-            Mode = ModeFlag.Lines | ModeFlag.Markers,
+            return new Scatter
+            {
+                Name = "ScatterTrace",
+                Mode = ModeFlag.Lines | ModeFlag.Markers,
 
-            X = new List<object> { },
-            Y = new List<object> { },
+                X = new List<object> { },
+                Y = new List<object> { },
 
-        };
-    }
+            };
+        }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -164,11 +164,11 @@ else
     {
         var rv = timeSeries switch
         {
-            "Minutes" => "%H:%M",
-            "Hours" => "%e.%m %H",
-            "Days" => "%e.%m",
-            "Months" => "%m.%Y",
-            "Quarters" => "%m.%Y",
+            "Minutes" => "%Y-%m-%d:%H:%M",
+            "Hours" => "%Y-%m-%d:%H",
+            "Days" => "%Y-%m-%d",
+            "Months" => "%Y-%m",
+            "Quarters" => "%Y-%m",
             "Years" => "%Y",
             _ => "%x"
         };
