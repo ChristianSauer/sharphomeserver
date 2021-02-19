@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Raven.Client.Documents.Operations.TimeSeries;
 using Raven.Client.Documents.Queries;
 using Raven.Client.Documents.Queries.TimeSeries;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,9 +12,10 @@ namespace SharpHomeServer.Data
 {
     public class ChartDataProvider : IChartDataProvider
     {
-        private IRavenDbDocumentStore store;
+        private readonly IRavenDbDocumentStore store;
+        private readonly ILogger<ChartDataProvider> logger;
 
-        public ChartDataProvider(IOptions<ChartOptions> options, IRavenDbDocumentStore store)
+        public ChartDataProvider(IOptions<ChartOptions> options, IRavenDbDocumentStore store, ILogger<ChartDataProvider> logger)
         {
             if (options.Value is null)
             {
@@ -24,6 +25,7 @@ namespace SharpHomeServer.Data
             Charts = options.Value;
 
             this.store = store;
+            this.logger = logger;
         }
 
         public async Task<(DateTime, DateTime)> GetTimeSeriesDatetimeRange(string document, string timeSeries)
@@ -31,7 +33,8 @@ namespace SharpHomeServer.Data
 
             var stats = await store.Store.Operations.SendAsync(new GetTimeSeriesStatisticsOperation(document));
 
-            var ts = stats.TimeSeries.Where(x => x.Name == timeSeries).FirstOrDefault();
+            var ts = stats.TimeSeries.
+                FirstOrDefault(x => x.Name == timeSeries);
 
             if (ts == null)
             {
@@ -41,27 +44,35 @@ namespace SharpHomeServer.Data
             return (ts.StartDate, ts.EndDate);
         }
 
-        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end)
-
+        public (string collection, string docId) SplitDocumentName(string document)
         {
-            var splitted = document.Split("/");
-            // todo error if  =!2
 
-            var collection = splitted[0] + "s"; // todo check?
+            var splitted = document.Split("/");
+
+            if (splitted.Length != 2)
+            {
+                throw new ArgumentOutOfRangeException($"document '{document}' should have the format 'collection/document'");
+            }
+
+            var collection = splitted[0] + "s";
             var docId = splitted[1];
 
-            var escaped = $"'{timeSeries}'"; // workaround fur current ravendb bug with timeseries names with blanks
+            return (collection, docId);
+        }
 
+        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end)
+        {
+            (string collection, string docId) = SplitDocumentName(document);
             using var session = store.Store.OpenSession();
 
             string groupByUnit = $"1 {groupBy}";
 
-            ValidGroupByTimes validGroupBy =  Enum.Parse<ValidGroupByTimes>(groupBy);
+            logger.LogDebug("querying {document}:{timeseries} from '{start}' to '{end}' grouped by {groupBy}", document, timeSeries, start, end, groupBy);
 
             var query = session.Query<Reading>(collectionName: collection)
                 .Where(x => x.readingType == docId)
                 .Select(q => RavenQuery
-                    .TimeSeries(q, escaped, start, end)
+                    .TimeSeries(q, timeSeries, start, end)
                     .GroupBy(groupByUnit)
                     .Select(g => new
                     {
@@ -70,9 +81,26 @@ namespace SharpHomeServer.Data
                         Average = g.Average()
                     })
                     .ToList());
-            var x = query.Expression;
-            var result = query.ToList();
 
+            var result = query.ToList();
+            Func<TimeSeriesRangeAggregation, double> aggregationFunc = getAggregationFunc(document, timeSeries);
+            TimeSeriesRangeAggregation[] data = result.FirstOrDefault().Results;
+            if (data == null)
+            {
+                logger.LogWarning($"No data for {document}:{timeSeries} return empty list");
+                return (new List<DateTime>(), new List<double>());
+            }
+
+            var y_values = data.Select(aggregationFunc).ToList();
+            var x_values = data.Select(x => x.From).ToList();
+
+            logger.LogDebug("found {count} values", x_values.Count);
+
+            return (x_values, y_values);
+        }
+
+        private Func<TimeSeriesRangeAggregation, double> getAggregationFunc(string document, string timeSeries)
+        {
             var options = GetChartOptionFor(document, timeSeries);
             Func<TimeSeriesRangeAggregation, double> aggregationFunc = (options.AggregationMode.ToLowerInvariant()) switch
             {
@@ -82,18 +110,20 @@ namespace SharpHomeServer.Data
                 "average" => (x) => x.Average.First(),
                 _ => throw new ArgumentException($"Unknown Aggregation Mode: {options.AggregationMode}"),
             };
-
-            TimeSeriesRangeAggregation[] data = result.FirstOrDefault().Results;
-            var y_values = data.Select(aggregationFunc).ToList();
-            var x_values = data.Select(x => x.From).ToList();
-            return (x_values, y_values);
+            return aggregationFunc;
         }
 
         public ChartOption GetChartOptionFor(string document, string timeSeries)
         {
-            return Charts.Charts.Where(x => x.DocumentId == document && x.TimeSeries == timeSeries).First();
+            return Charts.Charts.
+                First(x => x.DocumentId == document && x.TimeSeries == timeSeries);
         }
 
         public ChartOptions Charts { get; }
     }
 }
+
+// TODO: Timeunit selected
+// TODO: Welche ZeitZone
+// Start > End verhindern
+// Deep linking
