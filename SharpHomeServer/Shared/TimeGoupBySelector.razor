@@ -10,13 +10,10 @@
             var i = item;
             var isSelected = Current == i;
 
-            Console.WriteLine(isSelected);
-
             var activeClass = isSelected ? "active" : "";
             var cls = $"btn btn-outline-primary btn-lg btn-space {activeClass}";
 
-            <button class=@cls   @onclick="() => { Current = i; OnClick.InvokeAsync(i); }" aria-pressed="@isSelected">@i</button>// i used here since blazor currently needs that
-            // todo set selected
+            <button class=@cls @onclick="() => { Current = i; OnClick.InvokeAsync(i); }" aria-pressed="@isSelected">@i</button>// i used here since blazor currently needs that
         }
 
     </div>
@@ -33,5 +30,4 @@
     [Parameter] public EventCallback<string> OnClick { get; set; }
 
     public string Current { get; set; } = ValidGroupByTimes.Days.ToString("g");
-
 }
