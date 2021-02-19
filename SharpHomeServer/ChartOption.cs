@@ -14,5 +14,9 @@ namespace SharpHomeServer
 
         public string AggregationMode { get; set; }
 
+        public string Legend { get; set; }
+
+        public string Unit { get; set; }
+
     }
 }

@@ -41,7 +41,8 @@ else
     Config config = new Config();
     Layout layout = new Layout()
     {
-        XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } }
+        XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } },
+        YAxis = new List<YAxis> { new YAxis() }
     };
     // Using of the interface IList is important for the event callback!
     IList<ITrace> data = new List<ITrace>()
@@ -60,6 +61,7 @@ else
 
             X = new List<object> { },
             Y = new List<object> { },
+           
         };
     }
 
@@ -99,6 +101,10 @@ else
             scatter.Y.AddRange(y.Cast<object>().ToList());
 
             layout.XAxis.First().TickFormat = GetTickFormat(groupBy);
+            var title = new Plotly.Blazor.LayoutLib.XAxisLib.Title();
+            title.Text = chartData?.Legend;
+            layout.XAxis.First().Title = title;
+            layout.YAxis.First().TickSuffix = chartData?.Unit; 
             await chart.React();
         }
         else
