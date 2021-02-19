@@ -127,3 +127,5 @@ namespace SharpHomeServer.Data
 // TODO: Welche ZeitZone
 // Start > End verhindern
 // Deep linking
+// todo set chart to hidden while loading
+// todo: add unit to data and display
