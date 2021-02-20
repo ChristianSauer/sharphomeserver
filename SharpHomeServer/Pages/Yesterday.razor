@@ -1,0 +1,32 @@
+﻿@page "/yesterday"
+@inject SharpHomeServer.Data.IChartDataProvider provider;
+@using SharpHomeServer.Data;
+
+<h3>Usage on @yesterdayStart.Date.ToShortDateString()</h3>
+
+<table class="table table-dark table-striped w-50">
+    <thead>
+        <tr>
+            <th class="text-xl-right" scope="col">Metric</th>
+            <th scope="col">Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var chart in provider.Charts.Charts)
+        {
+            <tr>
+                <td class="text-xl-right">@chart.Name</td>
+                <td>@provider.GetReadingTimeSeries(chart.DocumentId, chart.TimeSeries, ValidGroupByTimes.Days.ToString("g"), yesterdayStart, yesterdayEnd).y_values.Single().ToString("F") @chart.Unit</td>
+            </tr>
+        }
+
+    </tbody>
+</table>
+
+
+@code {
+    DateTime yesterdayStart = DateTime.UtcNow.Date;
+    DateTime yesterdayEnd = DateTime.UtcNow.Date.Add(new TimeSpan(23, 59, 59));
+    // todo add selector to page through dates
+}
+

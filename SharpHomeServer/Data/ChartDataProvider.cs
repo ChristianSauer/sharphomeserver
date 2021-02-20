@@ -60,7 +60,7 @@ namespace SharpHomeServer.Data
             return (collection, docId);
         }
 
-        public (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end)
+        public (List<DateTime> x_values, List<double> y_values) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end)
         {
             (string collection, string docId) = SplitDocumentName(document);
             using var session = store.Store.OpenSession();

@@ -8,7 +8,7 @@ namespace SharpHomeServer.Data
     {
         ChartOptions Charts { get; }
 
-        (List<DateTime>, List<double>) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end);
+        (List<DateTime> x_values, List<double> y_values) GetReadingTimeSeries(string document, string timeSeries, string groupBy, DateTime start, DateTime end);
 
         ChartOption GetChartOptionFor(string document, string timeSeries);
 
