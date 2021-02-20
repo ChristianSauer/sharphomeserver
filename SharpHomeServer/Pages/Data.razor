@@ -14,6 +14,8 @@ else
 {
     <h1>@chartData.Name</h1>
     <p>@chartData.Explanation</p>
+
+    <p>Data from @timeSeriesStart.ToShortDateString() to @timeSeriesEnd.ToShortDateString() </p>
 }
 
 <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart" />
@@ -23,50 +25,56 @@ else
 <TimeRangePicker Start="@start" End="@end" EndChanged="HandleEndChange" StartChanged="HandleStartChange" ></TimeRangePicker>
 
 @code {
-        [Parameter]
-        public string Document { get; set; }
+    [Parameter]
+    public string Document { get; set; }
 
-        [Parameter]
-        public string Timeseries { get; set; }
+    [Parameter]
+    public string Timeseries { get; set; }
 
-        bool paramsChanged = false;
+    bool paramsChanged = false;
 
-        DateTime start;
-        DateTime end;
+    DateTime start;
+    DateTime end;
 
-        string groupBy = ValidGroupByTimes.Days.ToString("g");
+    DateTime timeSeriesStart;
+    DateTime timeSeriesEnd;
 
-        PlotlyChart chart;
-        ChartOption chartData;
-        Config config = new Config();
-        Layout layout = new Layout()
-        {
-            XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } },
-            YAxis = new List<YAxis> { new YAxis() }
-        };
-        // Using of the interface IList is important for the event callback!
-        IList<ITrace> data = new List<ITrace>()
+    string groupBy = ValidGroupByTimes.Days.ToString("g");
+
+    PlotlyChart chart;
+    ChartOption chartData;
+    Config config = new Config();
+    Layout layout = new Layout()
+    {
+        XAxis = new List<XAxis> { new XAxis() { TickFormat = "%e.%m" } },
+        YAxis = new List<YAxis> { new YAxis() }
+    };
+    // Using of the interface IList is important for the event callback!
+    IList<ITrace> data = new List<ITrace>()
 {
        GetScatter()
     };
 
-        DateTimeOffset userTime;
+    DateTimeOffset userTime;
 
-        private static Scatter GetScatter()
+    private static Scatter GetScatter()
+    {
+        return new Scatter
         {
-            return new Scatter
-            {
-                Name = "ScatterTrace",
-                Mode = ModeFlag.Lines | ModeFlag.Markers,
+            Name = "ScatterTrace",
+            Mode = ModeFlag.Lines | ModeFlag.Markers,
 
-                X = new List<object> { },
-                Y = new List<object> { },
+            X = new List<object> { },
+            Y = new List<object> { },
 
-            };
-        }
+        };
+    }
 
     protected override async Task OnParametersSetAsync()
     {
+        var (start1, end1) = await provider.GetTimeSeriesDatetimeRange(Document, Timeseries);
+        timeSeriesStart = start1;
+        timeSeriesEnd = end1;
         chartData = provider.GetChartOptionFor(Document, Timeseries);
         await ClearAndUpdateChart();
         StateHasChanged();
@@ -120,9 +128,8 @@ else
     {
         if (start == DateTime.MinValue && end == DateTime.MinValue)
         {
-            var (start1, end1) = await provider.GetTimeSeriesDatetimeRange(Document, Timeseries);
-            start = start1;
-            end = end1;
+            start = timeSeriesStart;
+            end = timeSeriesEnd;
         }
     }
 
