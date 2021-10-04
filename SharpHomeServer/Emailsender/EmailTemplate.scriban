@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .no-border {
+            border: 1px #dddddd;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Daily usage for: {{Start}}</h1>
+    </div>
+    <div>
+        <table class="no-border">
+            <tr>
+                <td>Name</td>
+                <td>Value</td>
+                <td>Legend</td>
+            </tr>
+
+            {{ for entry in Entries }}
+            <tr>
+            <td>{{entry.Name}}</td>
+            <td>{{entry.Value | math.format "F"}} {{entry.Metric}}</td>
+            <td>{{entry.Legend}}</td>
+            </tr>
+            {{ end}}
+        </table>
+    </div>
+</body>
+</html>
