@@ -8,9 +8,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="2.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="5.0.3" />
     <PackageReference Include="Plotly.Blazor" Version="1.5.0" />
     <PackageReference Include="Radzen.Blazor" Version="3.0.10" />
     <PackageReference Include="RavenDB.Client" Version="5.1.4" />
+    <PackageReference Include="Scriban" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Emailsender\EmailTemplate.scriban">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>

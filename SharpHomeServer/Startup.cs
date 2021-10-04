@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SharpHomeServer.Data;
+using SharpHomeServer.EmailSender;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -31,6 +32,9 @@ namespace SharpHomeServer
             services.Configure<RavenDbOptions>(Configuration.GetSection(
                                                 RavenDbOptions.RavenDb));
 
+            services.Configure<EmailSenderOptions>(Configuration.GetSection(
+                                    EmailSenderOptions.EmailSender));
+
 
             services.Configure<ChartOptions>(Configuration.GetSection("Layout"));
 
@@ -43,6 +47,7 @@ namespace SharpHomeServer
             services.AddSingleton<IReadingProvider, ReadingProvider>();
             services.AddSingleton<IChartDataProvider, ChartDataProvider>();
             services.AddHostedService<IndexDeployer>();
+            services.AddHostedService<DailyStatsMailSender>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
