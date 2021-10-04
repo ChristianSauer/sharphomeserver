@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SharpHomeServer.EmailSender
 {
@@ -15,5 +16,7 @@ namespace SharpHomeServer.EmailSender
         public SmtpServerOptions Server { get; set; }
 
         public List<EmailRecipient> Recipients { get; set; }
+        
+        public string CronExpression { get; set; }
     }
 }

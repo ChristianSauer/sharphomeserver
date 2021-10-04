@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cronos;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Options;
 using MimeKit;
 using Scriban;
 using SharpHomeServer.Data;
+using static System.Threading.Tasks.Task;
 
 namespace SharpHomeServer.EmailSender
 {
@@ -26,15 +28,39 @@ namespace SharpHomeServer.EmailSender
             _template = Template.Parse(GetTemplate());
         }
 
-        protected async override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // todo delay to wait!
-
             if (!Options.Enabled)
             {
                 Logger.LogInformation("Daily stats emailing disabled");
                 return;
             }
+
+            CronExpression expression;
+            try
+            {
+                expression = CronExpression.Parse(Options.CronExpression);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("CronExpression is invalid-, please modify the setting Emailing.CronExpression. {}", e);
+                return;
+            }
+
+
+            var nextUtc = expression.GetNextOccurrence(DateTime.UtcNow);
+
+            if (nextUtc is not { })
+            {
+                Logger.LogError("CronExpression will never occur, please modify the setting Emailing.CronExpression");
+                return;
+            }
+
+            var delay = nextUtc - DateTime.UtcNow;
+            
+            Logger.LogInformation("Will send next Email at {} in {}", nextUtc,  delay);
+            
+            await Delay(delay.Value, stoppingToken);
 
             var model = AggregateData();
 
@@ -82,10 +108,7 @@ namespace SharpHomeServer.EmailSender
             {
                 using var client = new SmtpClient();
                 client.Connect(Options.Server.Url, Options.Server.Port);
-
-                // Note: only needed if the SMTP server requires authentication
                 client.Authenticate(Options.Server.User, Options.Server.Password);
-
                 client.Send(message);
                 client.Disconnect(true);
             }
