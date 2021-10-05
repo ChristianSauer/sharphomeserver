@@ -5,6 +5,7 @@
     <LangVersion>9.0</LangVersion>
     <UserSecretsId>a7e1e670-41b1-4f55-8bfb-8b5e298ed8d3</UserSecretsId>
     <Configurations>Debug;Release;Raspi</Configurations>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
