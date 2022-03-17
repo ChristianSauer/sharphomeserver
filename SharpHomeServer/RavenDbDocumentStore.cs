@@ -27,21 +27,28 @@ namespace SharpHomeServer
 
         private IDocumentStore CreateStore()
         {
-            IDocumentStore store = new DocumentStore()
+            try
             {
-                // Define the cluster node URLs (required)
-                Urls = ravenDbOptions.Urls,
+                IDocumentStore store = new DocumentStore()
+                {
+                    // Define the cluster node URLs (required)
+                    Urls = ravenDbOptions.Urls,
 
-                // Define a default database (optional)
-                Database = ravenDbOptions.Database,
+                    // Define a default database (optional)
+                    Database = ravenDbOptions.Database,
 
-                // Define a client certificate (optional)
-                Certificate = new X509Certificate2(ravenDbOptions.CertificatePath, ravenDbOptions.Password),
+                    // Define a client certificate (optional)
+                    Certificate = new X509Certificate2(ravenDbOptions.CertificatePath, ravenDbOptions.Password),
 
-                // Initialize the Document Store
-            }.Initialize();
+                    // Initialize the Document Store
+                }.Initialize();
+                return store;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(ravenDbOptions.CertificatePath, e);
+            }
 
-            return store;
         }
     }
 }
